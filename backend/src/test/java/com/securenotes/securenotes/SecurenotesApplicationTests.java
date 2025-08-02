@@ -1,13 +1,44 @@
 package com.securenotes.securenotes;
 
+import com.securenotes.securenotes.model.User;
+import com.securenotes.securenotes.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class SecurenotesApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Autowired
+    private UserRepository userRepository;
 
+    @Test
+    void contextLoads() {
+        // Basic context load test
+    }
+
+    @Test
+    void adminUserShouldExist() {
+        assertThat(userRepository.findByUsername("admin")).isPresent();
+    }
+
+    @Test
+    void demoUserShouldExist() {
+        assertThat(userRepository.findByUsername("demo")).isPresent();
+    }
+
+    @Test
+    void canCreateAndFindUser() {
+        User user = new User();
+        user.setUsername("testuser");
+        user.setPassword("testpass");
+        user.setRole("USER");
+        user.setLocked(false);
+        user.setFailedLoginAttempts(0);
+        userRepository.save(user);
+
+        assertThat(userRepository.findByUsername("testuser")).isPresent();
+    }
 }
