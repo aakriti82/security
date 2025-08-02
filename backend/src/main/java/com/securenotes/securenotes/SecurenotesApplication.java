@@ -2,6 +2,10 @@ package com.securenotes.securenotes;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+package com.securenotes.securenotes;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 
@@ -16,7 +20,7 @@ public class SecurenotesApplication {
         SpringApplication.run(SecurenotesApplication.class, args);
     }
 
-    // Optional: Seed an admin user for testing/demo purposes
+    // Seed admin and demo users for testing/demo purposes
     @Bean
     public CommandLineRunner dataLoader(UserRepository userRepo, PasswordEncoder encoder) {
         return args -> {
@@ -29,6 +33,16 @@ public class SecurenotesApplication {
                 admin.setFailedLoginAttempts(0);
                 userRepo.save(admin);
                 System.out.println("Admin user created: admin/admin123");
+            }
+            if (userRepo.findByUsername("demo").isEmpty()) {
+                User demo = new User();
+                demo.setUsername("demo");
+                demo.setPassword(encoder.encode("demo123"));
+                demo.setRole("USER");
+                demo.setLocked(false);
+                demo.setFailedLoginAttempts(0);
+                userRepo.save(demo);
+                System.out.println("Demo user created: demo/demo123");
             }
         };
     }
