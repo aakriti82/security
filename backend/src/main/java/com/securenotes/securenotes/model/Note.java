@@ -1,19 +1,16 @@
 package com.securenotes.securenotes.model;
 
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class Note {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
     private Long id;
 
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @JsonIgnore
+    @ManyToOne
     private User user;
 
     // --- Getters ---
@@ -40,10 +37,5 @@ public class Note {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    // --- Utility ---
-    public Long getUserId() {
-        return user != null ? user.getId() : null;
     }
 }
