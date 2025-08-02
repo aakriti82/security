@@ -2,6 +2,12 @@
 <html>
 <head>
   <title>SecureNotes</title>
+  <style>
+    .message { margin: 10px 0; padding: 8px; border-radius: 4px; }
+    .error { background: #fdd; color: #900; }
+    .success { background: #dfd; color: #090; }
+    .loading { color: #555; }
+  </style>
 </head>
 <body>
   <h1>Register</h1>
@@ -9,43 +15,60 @@
     <input type="text" name="username" placeholder="Username"/><br/>
     <input type="password" name="password" placeholder="Password"/><br/>
     <button type="submit">Register</button>
+    <span class="loading" id="regLoading" style="display:none;">Loading...</span>
+    <div id="regMsg"></div>
   </form>
 
   <h1>Login</h1>
   <form id="loginForm">
-    <input type="text" name="username" placeholder="Type your username here"/><br/>
-    <input type="password" name="password" placeholder="Type your password here"/><br/>
+    <input type="text" name="username" placeholder="username"/><br/>
+    <input type="password" name="password" placeholder="password"/><br/>
     <button type="submit">Login</button>
+    <span class="loading" id="loginLoading" style="display:none;">Loading...</span>
+    <div id="loginMsg"></div>
   </form>
 
   <script>
-    document.getElementById("regForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = {
-        username: e.target.username.value,
-        password: e.target.password.value
-      };
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
-      alert(await res.text());
-    });
+    function showMessage(id, msg, type) {
+      const el = document.getElementById(id);
+      el.innerHTML = msg;
+      el.className = 'message ' + (type || '');
+    }
 
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = {
-        username: e.target.username.value,
-        password: e.target.password.value
-      };
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+    async function handleForm(formId, url, msgId, loadingId) {
+      const form = document.getElementById(formId);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector("button[type=submit]");
+        const username = e.target.username.value.trim();
+        const password = e.target.password.value;
+        if (!username || !password) {
+          showMessage(msgId, "Please fill in all fields.", "error");
+          return;
+        }
+        btn.disabled = true;
+        document.getElementById(loadingId).style.display = "inline";
+        showMessage(msgId, "", "");
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, password })
+          });
+          const text = await res.text();
+          if (res.ok) {
+            showMessage(msgId, text, "success");
+          } else {
+            showMessage(msgId, text, "error");
+          }
+        } catch (err) {
+          showMessage(msgId, "Network error.", "error");
+        }
+        btn.disabled = false;
+        document.getElementById(loadingId).style.display = "none";
       });
-      alert(await res.text());
-    });
+    }
+
+    handleForm("regForm", "/api/auth/register", "regMsg", "regLoading");
+    handleForm("loginForm", "/api/auth/login", "loginMsg", "loginLoading");
   </script>
-</body>
-</html>
