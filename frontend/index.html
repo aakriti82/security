@@ -2,14 +2,6 @@
 <html>
 <head>
   <title>SecureNotes</title>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    .message { margin: 10px 0; padding: 8px; border-radius: 4px; }
-    .error { background: #fdd; color: #900; }
-    .success { background: #dfd; color: #090; }
-    .loading { color: #555; }
-    form { margin-bottom: 24px; }
-  </style>
 </head>
 <body>
   <h1>Register</h1>
@@ -17,8 +9,6 @@
     <input type="text" name="username" placeholder="Username"/><br/>
     <input type="password" name="password" placeholder="Password"/><br/>
     <button type="submit">Register</button>
-    <span class="loading" id="regLoading" style="display:none;">Loading...</span>
-    <div id="regMsg"></div>
   </form>
 
   <h1>Login</h1>
@@ -26,169 +16,36 @@
     <input type="text" name="username" placeholder="username"/><br/>
     <input type="password" name="password" placeholder="password"/><br/>
     <button type="submit">Login</button>
-    <span class="loading" id="loginLoading" style="display:none;">Loading...</span>
-    <div id="loginMsg"></div>
   </form>
 
-  <div id="userPanel" style="display:none;">
-    <h2>Welcome, <span id="userName"></span>!</h2>
-    <button id="logoutBtn">Logout</button>
-    <div id="notesSection">
-      <h3>Your Notes</h3>
-      <ul id="notesList"></ul>
-      <form id="noteForm">
-        <input type="text" name="note" placeholder="New note" required/>
-        <button type="submit">Add Note</button>
-      </form>
-      <div id="noteMsg"></div>
-    </div>
-  </div>
-
   <script>
-    // Utility to show messages
-    function showMessage(id, msg, type) {
-      const el = document.getElementById(id);
-      el.innerHTML = msg;
-      el.className = 'message ' + (type || '');
-    }
-
-    // Save token to localStorage
-    function saveToken(token) {
-      localStorage.setItem('token', token);
-    }
-    function getToken() {
-      return localStorage.getItem('token');
-    }
-    function clearToken() {
-      localStorage.removeItem('token');
-    }
-
-    // Show/hide panels
-    function showUserPanel(username) {
-      document.getElementById('userPanel').style.display = '';
-      document.getElementById('userName').textContent = username;
-      document.getElementById('regForm').style.display = 'none';
-      document.getElementById('loginForm').style.display = 'none';
-    }
-    function showAuthForms() {
-      document.getElementById('userPanel').style.display = 'none';
-      document.getElementById('regForm').style.display = '';
-      document.getElementById('loginForm').style.display = '';
-    }
-
-    // Handle registration and login
-    async function handleForm(formId, url, msgId, loadingId, onSuccess) {
-      const form = document.getElementById(formId);
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const btn = form.querySelector("button[type=submit]");
-        const username = e.target.username.value.trim();
-        const password = e.target.password.value;
-        if (!username || !password) {
-          showMessage(msgId, "Please fill in all fields.", "error");
-          return;
-        }
-        btn.disabled = true;
-        document.getElementById(loadingId).style.display = "inline";
-        showMessage(msgId, "", "");
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username, password })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            showMessage(msgId, data.message || "Success!", "success");
-            if (data.token) {
-              saveToken(data.token);
-              onSuccess && onSuccess(username);
-            }
-          } else {
-            showMessage(msgId, data.message || "Error", "error");
-          }
-        } catch (err) {
-          showMessage(msgId, "Network error.", "error");
-        }
-        btn.disabled = false;
-        document.getElementById(loadingId).style.display = "none";
-      });
-    }
-
-    // Notes logic
-    async function fetchNotes() {
-      const token = getToken();
-      if (!token) return;
-      try {
-        const res = await fetch('/api/notes', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await res.json();
-        if (res.ok) {
-          const notesList = document.getElementById('notesList');
-          notesList.innerHTML = '';
-          data.notes.forEach(note => {
-            const li = document.createElement('li');
-            li.textContent = note;
-            notesList.appendChild(li);
-          });
-        } else {
-          showMessage('noteMsg', data.message || "Failed to load notes", "error");
-        }
-      } catch {
-        showMessage('noteMsg', "Network error.", "error");
-      }
-    }
-
-    document.getElementById('logoutBtn').onclick = function() {
-      clearToken();
-      showAuthForms();
-    };
-
-    document.getElementById('noteForm').addEventListener('submit', async function(e) {
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const note = e.target.note.value.trim();
-      if (!note) return;
-      const token = getToken();
-      if (!token) return;
-      try {
-        const res = await fetch('/api/notes', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({ note })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          showMessage('noteMsg', "Note added!", "success");
-          e.target.note.value = '';
-          fetchNotes();
-        } else {
-          showMessage('noteMsg', data.message || "Failed to add note", "error");
-        }
-      } catch {
-        showMessage('noteMsg', "Network error.", "error");
-      }
+      const data = {
+        username: e.target.username.value,
+        password: e.target.password.value
+      };
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      alert(await res.text());
     });
 
-    // Registration and login handlers
-    handleForm("regForm", "/api/auth/register", "regMsg", "regLoading", (username) => {
-      showUserPanel(username);
-      fetchNotes();
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        username: e.target.username.value,
+        password: e.target.password.value
+      };
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      alert(await res.text());
     });
-    handleForm("loginForm", "/api/auth/login", "loginMsg", "loginLoading", (username) => {
-      showUserPanel(username);
-      fetchNotes();
-    });
-
-    // Auto-login if token exists (optional, demo purpose)
-    window.addEventListener('DOMContentLoaded', () => {
-      const token = getToken();
-      if (token) {
-        // Optionally, fetch username from backend
-        showUserPanel("User");
-        fetchNotes();
-      }
-    });
+  </script>
+</body>
+</html>
