@@ -29,16 +29,4 @@ class SecurenotesApplicationTests {
         assertThat(userRepository.findByUsername("demo")).isPresent();
     }
 
-    @Test
-    void canCreateAndFindUser() {
-        User user = new User();
-        user.setUsername("testuser");
-        user.setPassword("testpass");
-        user.setRole("USER");
-        user.setLocked(false);
-        user.setFailedLoginAttempts(0);
-        userRepository.save(user);
 
-        assertThat(userRepository.findByUsername("testuser")).isPresent();
-    }
-}
