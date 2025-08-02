@@ -22,3 +22,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Count users by role
     long countByRole(String role);
+
+    // Find users with failed login attempts above a threshold
+    List<User> findByFailedLoginAttemptsGreaterThan(int threshold);
+
+    // Find all unlocked users
+    List<User> findByLockedFalse();
+
+    // Custom query: get usernames of all users
+    @Query("SELECT u.username FROM User u")
+    List<String> findAllUsernames();
+
+    // Custom query: get users created after a certain id (for pagination or sync)
+    @Query("SELECT u FROM User u WHERE u.id > :afterId")
+    List<User> findAllAfterId(@Param("afterId")
