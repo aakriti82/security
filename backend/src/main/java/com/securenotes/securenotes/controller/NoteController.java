@@ -61,4 +61,52 @@ public class NoteController {
         resp.put("message", "Note saved");
         return ResponseEntity.ok(resp);
     }
-}
+
+    // New: Delete a note by ID (only if it belongs to the user)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteNote(@RequestHeader("Authorization") String authHeader, @PathVariable Long id) {
+        String username = getUsernameFromToken(authHeader);
+        if (username == null) {
+            Map<String, String> resp = new HashMap<>();
+            resp.put("message", "Unauthorized");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
+        }
+        Optional<Note> noteOpt = noteRepo.findById(id);
+        if (noteOpt.isEmpty() || !username.equals(noteOpt.get().getUsername())) {
+            Map<String, String> resp = new HashMap<>();
+            resp.put("message", "Note not found or not authorized");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
+        }
+        noteRepo.deleteById(id);
+        Map<String, String> resp = new HashMap<>();
+        resp.put("message", "Note deleted");
+        return ResponseEntity.ok(resp);
+    }
+
+    // Edit a note by ID (only if it belongs to the user)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editNote(@RequestHeader("Authorization") String authHeader, @PathVariable Long id, @RequestBody Map<String, String> body) {
+        String username = getUsernameFromToken(authHeader);
+        if (username == null) {
+            Map<String, String> resp = new HashMap<>();
+            resp.put("message", "Unauthorized");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
+        }
+        Optional<Note> noteOpt = noteRepo.findById(id);
+        if (noteOpt.isEmpty() || !username.equals(noteOpt.get().getUsername())) {
+            Map<String, String> resp = new HashMap<>();
+            resp.put("message", "Note not found or not authorized");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resp);
+        }
+        String content = body.get("note");
+        if (content == null || content.trim().isEmpty()) {
+            Map<String, String> resp = new HashMap<>();
+            resp.put("message", "Note content required");
+            return ResponseEntity.badRequest().body(resp);
+        }
+        Note note = noteOpt.get();
+        note.setContent(content);
+        noteRepo.save(note);
+        Map<String, String> resp = new HashMap<>();
+        resp.put("message", "Note updated");
+        return ResponseEntity.ok(resp);
